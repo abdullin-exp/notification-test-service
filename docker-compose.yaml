@@ -6,7 +6,7 @@ services:
         ports:
             - '8080:80'
         volumes:
-            - './app:/var/www/project'
+            - './src:/var/www/project'
             - './docker/nginx/default.conf:/etc/nginx/conf.d/default.conf'
         depends_on:
             - app
@@ -16,7 +16,7 @@ services:
             context: 'docker/php'
         container_name: 'notifier_php'
         volumes:
-          - './app:/var/www/project'
+          - './src:/var/www/project'
         depends_on:
             db:
                 condition: service_healthy
