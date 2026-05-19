@@ -1,0 +1,62 @@
+services:
+    server:
+        build:
+            context: 'docker/nginx'
+        container_name: notifier_nginx
+        ports:
+            - '8080:80'
+        volumes:
+            - './app:/var/www/project'
+            - './docker/nginx/default.conf:/etc/nginx/conf.d/default.conf'
+        depends_on:
+            - app
+
+    app:
+        build:
+            context: 'docker/php'
+        container_name: 'notifier_php'
+        volumes:
+          - './app:/var/www/project'
+        depends_on:
+            db:
+                condition: service_healthy
+
+    db:
+        build:
+            context: 'docker/postgres'
+        container_name: 'notifier_pgsql'
+        environment:
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: admin
+            POSTGRES_DB: notify
+        ports:
+            - '5433:5432'
+        volumes:
+            - 'postgresql-data:/var/lib/postgresql'
+        healthcheck:
+            test: [ 'CMD-SHELL', 'pg_isready -U admin' ]
+            interval: 3s
+            timeout: 3s
+            retries: 20
+
+    queue:
+        build:
+            context: 'docker/rabbit'
+        container_name: 'notifier_rabbit_mq'
+        ports:
+            - '5672:5672'
+            - '15672:15672'
+        environment:
+            RABBITMQ_DEFAULT_USER: admin
+            RABBITMQ_DEFAULT_PASS: admin
+
+    cache:
+        build:
+            context: 'docker/redis'
+        container_name: 'notifier_redis'
+        ports:
+            - '6379:6379'
+
+volumes:
+    postgresql-data:
+        driver: 'local'
